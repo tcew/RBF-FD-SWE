@@ -22,10 +22,10 @@
         double4 rhs;
 	
         // Four-vectors represent u,v,w,h components of the state variable matrices
-        double4 dH_dx = (double4)(0.0);
-        double4 dH_dy = (double4)(0.0);
-        double4 dH_dz = (double4)(0.0);
-        double4 LH = (double4)(0.0);
+        double4 dH_dx = (double4){0.0,0.0,0.0,0.0};
+        double4 dH_dy = (double4){0.0,0.0,0.0,0.0};
+        double4 dH_dz = (double4){0.0,0.0,0.0,0.0};
+        double4 LH = (double4){0.0,0.0,0.0,0.0};
 	
 #pragma unroll
         for (int j = 0; j < Nnbr; j++){
@@ -33,21 +33,29 @@
             H = K[idx[dmid]];
         
             // Update sums
-            dH_dx += Dx[dmid] * H; // dH_m/d_n = (D^n)_(ij) (H_m)^(ij)
-            dH_dy += Dy[dmid] * H;
-            dH_dz += Dz[dmid] * H;
-            LH += L[dmid] * H;
+	    // dH_m/d_n = (D^n)_(ij) (H_m)^(ij)
+	    double dx = Dx[dmid], dy = Dy[dmid], dz = Dz[dmid], Ldmid = L[dmid];
+	    
+            dH_dx.x += dx * H.x; dH_dx.y += dx * H.y;  dH_dx.z += dx * H.z; dH_dx.w += dx * H.w;
+            dH_dy.x += dy * H.x; dH_dy.y += dy * H.y;  dH_dy.z += dy * H.z; dH_dy.w += dy * H.w;
+            dH_dz.x += dz * H.x; dH_dz.y += dz * H.y;  dH_dz.z += dz * H.z; dH_dz.w += dz * H.w;
+            LH.x += Ldmid * H.x; LH.y += Ldmid * H.y;  LH.z += Ldmid * H.z; LH.w += Ldmid * H.w;
         }
 	
         // Reset to get H at current node (rather than final neighbor)
         H = K[i+compute_pid_s];
         
         // Evaluate RHS of unconstrained momentum equations
-        rhs = (H.s0 * dH_dx) + (H.s1 * dH_dy) + (H.s2 * dH_dz);
-        rhs.s0 += f[i] * ((y[i] * H.s2) - (z[i] * H.s1)) + dH_dx.s3;
-        rhs.s1 += f[i] * ((z[i] * H.s0) - (x[i] * H.s2)) + dH_dy.s3;
-        rhs.s2 += f[i] * ((x[i] * H.s1) - (y[i] * H.s0)) + dH_dz.s3;
-        rhs *= -1;
+        rhs.x = (H.x * dH_dx.x) + (H.y * dH_dy.x) + (H.z * dH_dz.x);
+	rhs.y = (H.x * dH_dx.y) + (H.y * dH_dy.y) + (H.z * dH_dz.y);
+	rhs.z = (H.x * dH_dx.z) + (H.y * dH_dy.z) + (H.z * dH_dz.z);
+
+        rhs.x += f[i] * ((y[i] * H.z) - (z[i] * H.y)) + dH_dx.w;
+        rhs.y += f[i] * ((z[i] * H.x) - (x[i] * H.z)) + dH_dy.w;
+        rhs.z += f[i] * ((x[i] * H.y) - (y[i] * H.x)) + dH_dz.w;
+        rhs.x *= -1;
+	rhs.y *= -1;
+	rhs.z *= -1;
 	
         // Project momentum equations to confine motion to the surface of the sphere and add hyperviscosity
         // Get indices of x, y, and z components of projection matrices
@@ -56,13 +64,21 @@
         int z_id = 3*i + 2;
     
         // Evaluate projections and apply hyperviscosity
-        F[i].s0 = (p_u[x_id] * rhs.s0) + (p_u[y_id] * rhs.s1) + (p_u[z_id] * rhs.s2);
-        F[i].s1 = (p_v[x_id] * rhs.s0) + (p_v[y_id] * rhs.s1) + (p_v[z_id] * rhs.s2);
-        F[i].s2 = (p_w[x_id] * rhs.s0) + (p_w[y_id] * rhs.s1) + (p_w[z_id] * rhs.s2);
+        F[i].x = (p_u[x_id] * rhs.x) + (p_u[y_id] * rhs.y) + (p_u[z_id] * rhs.z);
+        F[i].y = (p_v[x_id] * rhs.x) + (p_v[y_id] * rhs.y) + (p_v[z_id] * rhs.z);
+        F[i].z = (p_w[x_id] * rhs.x) + (p_w[y_id] * rhs.y) + (p_w[z_id] * rhs.z);
     
         // Calculate the RHS of the geopotential equation
-        F[i].s3 = rhs.s3 + (H.s0 * gradghm[x_id]) + (H.s1 * gradghm[y_id]) + (H.s2 * gradghm[z_id]) - (H.s3 + gh0 - ghm[i]) * (dH_dx.s0 + dH_dy.s1 + dH_dz.s2);
-        F[i] += LH;
+        F[i].w = rhs.w +
+	  (H.x * gradghm[x_id]) +
+	  (H.y * gradghm[y_id]) +
+	  (H.z * gradghm[z_id]) -
+	  (H.w + gh0 - ghm[i]) * (dH_dx.x + dH_dy.y + dH_dz.z);
+
+	F[i].x += LH.x;
+	F[i].y += LH.y;
+	F[i].z += LH.z;
+	F[i].w += LH.w;
       }
     }
   }
