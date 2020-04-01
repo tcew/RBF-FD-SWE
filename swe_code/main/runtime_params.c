@@ -37,6 +37,9 @@ void get_runtime_params() {
 
     // Use opencl for parallelization
     sim_params.OCL = atoi(getenv("SWE_USE_OCL"));
+
+    // Use opencl for parallelization
+    sim_params.OCCA = atoi(getenv("SWE_USE_OCCA"));
 }
 
 // print runtime parameterizations at beggining of simulation

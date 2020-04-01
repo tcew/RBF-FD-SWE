@@ -1,14 +1,15 @@
 include ../../include.mk
 
-INCLUDE = -I./include $(INCLUDE_COMMON)
+INCLUDE = -I./include $(INCLUDE_COMMON) 
 
-OCCA_OBJS = device_setup.o RK_occa.o buffers.o
+OCC_OBJS = RK_occa.o buffers.o
+#device_setup.o RK_occa.o buffers.o
 
-OCCA_LIB = swe_occa.a
+OCC_LIB = swe_occa.a
 
-all: $(OCCA_LIB)
+all: $(OCC_LIB)
 
-$(OCCA_LIB): $(OCCA_OBJS)
+$(OCC_LIB): $(OCC_OBJS)
 	$(LD_R) $^ -o $@
 	@$(MAKE) clean
 

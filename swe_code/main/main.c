@@ -20,6 +20,8 @@
 
 #ifdef USE_OCCA
 #include <occa.h>
+#include <buffers_occa.h>
+#include <RK_occa.h>
 #endif
 
 #ifdef USE_MPI
@@ -306,7 +308,7 @@ int main(int argc, char** argv) {
   occaKernel update_D_kernel;
   occaKernel eval_K_kernel;
   occaKernel update_H_kernel;
-    
+
   // Free all opencl buffers
   LPSMD_buffers* LPSMD_buffs = (LPSMD_buffers*) malloc(sizeof(LPSMD_buffers));
   occaMemory H_buff;
@@ -350,13 +352,14 @@ int main(int argc, char** argv) {
     else strcpy(kernelFile,getenv("SWE_KERNEL_FILE"));
 
     // Compile all OKL kernels
-    eval_RHS_Kernel = occaDeviceBuildKernel(device, kernelFile, "eval_RHS_kernel");
-    copy_arr_Kernel = occaDeviceBuildKernel(device, kernelFile, "copy_arr_kernel");
-    update_D_Kernel = occaDeviceBuildKernel(device, kernelFile, "update_D_kernel");
-    eval_K_Kernel   = occaDeviceBuildKernel(device, kernelFile, "eval_K_kernel");
-    update_H_Kernel = occaDeviceBuildKernel(device, kernelFile, "update_H_kernel");
+    occaProperties props = occaCreateProperties();
+    eval_RHS_kernel = occaDeviceBuildKernel(device, kernelFile, "eval_RHS_kernel", props);
+    copy_arr_kernel = occaDeviceBuildKernel(device, kernelFile, "copy_arr_kernel", props);
+    update_D_kernel = occaDeviceBuildKernel(device, kernelFile, "update_D_kernel", props);
+    eval_K_kernel   = occaDeviceBuildKernel(device, kernelFile, "eval_K_kernel",   props);
+    update_H_kernel = occaDeviceBuildKernel(device, kernelFile, "update_H_kernel", props);
     
-    load_all_buffers(context, commandQueue, LPSMD_buffs, &F_buff, &D_buff);
+    load_all_buffers(device, LPSMD_buffs, &F_buff, &D_buff);
     local_timer.t_occa = getTime() - t_start;
 
 #else
@@ -438,7 +441,7 @@ int main(int argc, char** argv) {
 	  
 #ifdef USE_OCCA
 	  RK_substep_occa(eval_RHS_kernel, copy_arr_kernel, update_D_kernel, eval_K_kernel, update_H_kernel, device,
-			  H_buff, F_buff, K_buff, D_buff, rk_val);
+			  LPSMD_buffs, H_buff, F_buff, K_buff, D_buff, rk_val);
                     
 #ifdef MPI
 	  if (mpi_size > 1) {

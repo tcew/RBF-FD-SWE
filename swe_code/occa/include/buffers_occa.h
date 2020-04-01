@@ -1,7 +1,7 @@
 #ifndef BUFFERS_H
 #define BUFFERS_H
 
-#include <device_setup.h>
+#include <device_setup_occa.h>
 #include <stdlib.h>
 #include <string.h>
 #include <swe_config.h>

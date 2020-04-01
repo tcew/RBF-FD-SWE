@@ -2,6 +2,7 @@
 // Modified by Tim Warburton, Spring 2020.
 
 #ifdef USE_OCCA
+
 #include <buffers.h>
 
 extern PSMD_struct* LPSMD;
@@ -39,13 +40,14 @@ void load_all_buffers(occaDevice device, LPSMD_buffers* LPSMD_buffs, occaMemory*
     load_buffer_fType(device, &LPSMD_buffs->gradghm, LPSMD->gradghm, padded_Nnodes * 3);
     
     // F and D start out as NULL
-    *F_buff = occaMemory(device, sizeof(fType)*padded_Nnodes*4);
-    *D_buff = occaMemory(device, sizeof(fType)*padded_Nnodes*4);
+    *F_buff = occaDeviceMalloc(device, sizeof(fType)*padded_Nnodes*4, NULL, occaDefault);
+    *D_buff = occaDeviceMalloc(device, sizeof(fType)*padded_Nnodes*4, NULL, occaDefault);
 }
 
 // Free memory for all buffers
 void release_all_buffers(LPSMD_buffers* LPSMD_buffs, occaMemory* H_buff, occaMemory* F_buff, occaMemory* D_buff, occaMemory* K_buff) {
-    
+
+  #if 0
     // For each buffer, check if it exists, and if not, release
     if(LPSMD_buffs->x) occaFree(LPSMD_buffs->x);
     if(LPSMD_buffs->y) occaFree(LPSMD_buffs->y);
@@ -66,6 +68,7 @@ void release_all_buffers(LPSMD_buffers* LPSMD_buffs, occaMemory* H_buff, occaMem
     if(*K_buff) occaFree(*K_buff);
     if(*D_buff) occaFree(*D_buff);
     if(*H_buff) occaFree(*H_buff);
+    #endif
 }
 
 #endif

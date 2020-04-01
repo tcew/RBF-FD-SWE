@@ -6,7 +6,15 @@
 extern PSMD_struct* LPSMD;
 extern timing_struct local_timer;
 
-void RK_substep_occa(occaKernel eval_RHS_kernel, occaKernel copy_arr_kernel, occaKernel update_D_kernel, occaKernel eval_K_kernel, occaKernel update_H_kernel, occaDevice device, int substep_id) {
+void RK_substep_occa(occaKernel eval_RHS_kernel,
+		     occaKernel copy_arr_kernel,
+		     occaKernel update_D_kernel,
+		     occaKernel eval_K_kernel,
+		     occaKernel update_H_kernel,		     
+		     occaDevice device,
+		     LPSMD_buffers *LPSMD_buffs,
+		     occaMemory H_buff,occaMemory F_buff,occaMemory K_buff,occaMemory D_buff,
+		     int substep_id) {
     
     // full RK4 timestep length
     const fType dt = LPSMD->dt;
@@ -14,44 +22,44 @@ void RK_substep_occa(occaKernel eval_RHS_kernel, occaKernel copy_arr_kernel, occ
     switch(substep_id) {
         case 0:
             // get F_0 = d/dt(K_0 = H)
-            eval_RHS_occa(eval_RHS_kernel, device);
+	  eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
             // initialize D = F_0
-            copy_arr_occa(copy_arr_kernel, device);
+	  copy_arr_occa(copy_arr_kernel, device, D_buff, F_buff);
             // evaluate K_1 = H + (dt/2) * F_0
-            eval_K_occa(eval_K_kernel, device, dt/2.0);
+            eval_K_occa(eval_K_kernel, device,  H_buff, F_buff, K_buff, dt/2.0);
             break;
             
         case 1:
             // get F_1 = d/dt(K_1 = H + (dt/2) * F_0)
-            eval_RHS_occa(eval_RHS_kernel, device);
+	  eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
             // update D += 2 * F_1
-            update_D_occa(update_D_kernel, device, 2.0);
+	  update_D_occa(update_D_kernel, device, F_buff, D_buff, 2.0);
             // evaluate K_2 = H + (dt/2) * F_0
-            eval_K_occa(eval_K_kernel, device, dt/2.0);
+            eval_K_occa(eval_K_kernel, device,  H_buff, F_buff, K_buff, dt/2.0);
             break;
             
         case 2:
             // get F_2 = d/dt(K_2 = H + (dt/2) * F_1)
-            eval_RHS_occa(eval_RHS_kernel, device);
+	  eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
             // update D += 2 * F_2
-            update_D_occa(update_D_kernel, device, 2.0);
+	  update_D_occa(update_D_kernel, device, F_buff, D_buff, 2.0);
             // evaluate K_3 = H + dt * F_0
-            eval_K_occa(eval_K_kernel, device, dt);
+	  eval_K_occa(eval_K_kernel, device, H_buff, F_buff, K_buff, dt);
             break;
             
         case 3:
             // get F_3 = d/dt(K_3 = H + dt * F_2)
-            eval_RHS_occa(eval_RHS_kernel, device);
+	  eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
             // update D += F_3
-            update_D_occa(update_D_kernel, device, 1.0);
+	  update_D_occa(update_D_kernel, device, F_buff, D_buff, 1.0);
             // add everything together to get H_n+1
-            update_H_occa(update_H_kernel, device);
+	  update_H_occa(update_H_kernel, device, H_buff, D_buff, K_buff, dt);
             break;
     }
 }
 
 void eval_RHS_occa(occaKernel kernel, occaDevice device,
-		   occaMemory K_buff, occaMemory F_buff){
+		   LPSMD_buffers *LPSMD_buffs, occaMemory K_buff, occaMemory F_buff){
   
     double t_start = getTime();
     
@@ -93,7 +101,7 @@ void eval_RHS_occa(occaKernel kernel, occaDevice device,
 		  occaInt(LPSMD->compute_pid_s));
 
     // TW: NASTY ! Every invocation is blocking
-    device.finish(); 
+    occaDeviceFinish(device);
     local_timer.t_eval_rhs[local_timer.attempt] +=  (getTime() - t_start);
 }
 
@@ -111,14 +119,14 @@ void copy_arr_occa(occaKernel kernel, occaDevice device,
 }
 
 void update_D_occa(occaKernel kernel, occaDevice device,
-		   occaBuffer F_buff, occaBuffer D_buff, const fType coefficient, int Nnodes){
+		   occaMemory F_buff, occaMemory D_buff, const fType coefficient){
     double t_start = getTime();
     
     // global size and work-group size
     int wgsize = 64;
     int wgcount = ((LPSMD->compute_size)*4)/ wgsize + 1;
 
-    occaRunKernel(kernel, occaInt(wgcount), occaInt(wgsize),
+    occaKernelRun(kernel, occaInt(wgcount), occaInt(wgsize),
 		  F_buff, D_buff, occaFtype(coefficient), occaInt(LPSMD->compute_size));
     
     // error checking later
@@ -136,7 +144,7 @@ void eval_K_occa(occaKernel kernel, occaDevice device,
     int wgsize = 64;
     int wgcount = ((LPSMD->compute_size)*4)/ wgsize + 1;
 
-    occaRunKernel(kernel, occaInt(wgcount), occaInt(wgsize),
+    occaKernelRun(kernel, occaInt(wgcount), occaInt(wgsize),
 		  H_buff, F_buff, K_buff, occaDouble(dt), occaInt(LPSMD->compute_size), occaInt(LPSMD->compute_pid_s));
 		  
     // error check later
@@ -153,7 +161,7 @@ void update_H_occa(occaKernel kernel, occaDevice device,
     int wgsize = 64;
     int wgcount = ((LPSMD->compute_size)*4)/wgsize + 1;
 
-    occaRunKernel(kernel, occaInt(wgcount), occaInt(wgsize),
+    occaKernelRun(kernel, occaInt(wgcount), occaInt(wgsize),
 		  H_buff, occaFtype(dt), D_buff, K_buff, occaInt(LPSMD->compute_size), occaInt(LPSMD->compute_pid_s));
     
     // error check later

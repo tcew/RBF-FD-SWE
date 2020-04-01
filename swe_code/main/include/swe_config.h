@@ -9,6 +9,10 @@
 #endif
 #endif
 
+#ifdef USE_OCCA
+#include <occa.h>
+#endif
+
 // ======================================================================================================================== //
 
 // ========================================= Vectorization/SIMD Relevant Definitions ====================================== //
@@ -120,6 +124,9 @@ typedef struct sim_params_struct {
     // OpenCL
     int OCL;
 
+  // OCCA
+  int OCCA;
+  
 } sim_params_struct;
 
 
@@ -257,6 +264,33 @@ typedef struct LPSMD_buffers {
 } LPSMD_buffers;
 #endif
 
+// OpenCL buffer structures
+#ifdef USE_OCCA
+typedef struct LPSMD_buffers {
+    occaMemory idx;     // Objects are the same as the PSMD objects, but OpenCL input buffers
+  
+    occaMemory Dx;
+    occaMemory Dy;
+    occaMemory Dz;
+    occaMemory L;
+    
+    occaMemory x;
+    occaMemory y;
+    occaMemory z;
+    occaMemory f;
+    
+    occaMemory ghm;
+    
+    occaMemory p_u;
+    occaMemory p_v;
+    occaMemory p_w;
+    
+    occaMemory gradghm;
+} LPSMD_buffers;
+#endif
+
+
+
 // ======================================================================================================================== //
 
 typedef struct timing_struct {
@@ -266,7 +300,8 @@ typedef struct timing_struct {
 
 	// initialization timers
 	double t_init;
-    double t_ocl;
+        double t_ocl;
+        double t_occa;
 
 	// main timestepping timers
 	double* t_main;
