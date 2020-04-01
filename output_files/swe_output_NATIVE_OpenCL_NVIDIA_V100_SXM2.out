@@ -1,0 +1,64 @@
+
+
+=============================================== Runtime Configurations ===================================================
+
+Input from file: yes
+	Input File Path: /home/ubuntu/Work/git/RBF-FD-SWE/input_files/icos2562_tc5_input.bin
+
+Simulation length (timesteps): 100
+Number of attempts: 10
+USE RCM Node Ordering: yes
+
+============================================================================================================================
+
+
+
+====================================================================================== MPI Patch Decomposition ================================================================================================
+
+	Rank #  0:	halo_gid_s =       0,	compute_gid_s =       0,	lnbr_halo_gid_e =       0,	rnbr_halo_gid_s =    2568,	compute_gid_e =    2568,		halo_gid_e =    2568
+
+================================================================================================================================================================================================================
+
+
+
+============================================== OpenCL Device Information ===================================================
+
+Available platforms:
+
+Platform # 0	-> 	NVIDIA CUDA
+>>> Choose platform 0
+
+Available devices:
+
+Device # 0	-> 	Tesla V100-SXM2-16GB
+>>> Choose device 0
+
+Number of subdevices: 1
+Executable is not set up to support device splitting (SPLIT_DEV=0)
+--> Executing in serial
+
+============================================================================================================================
+
+Attempt 1:	VERIFICATION SUCCEEDED
+Attempt 2:	VERIFICATION SUCCEEDED
+Attempt 3:	VERIFICATION SUCCEEDED
+Attempt 4:	VERIFICATION SUCCEEDED
+Attempt 5:	VERIFICATION SUCCEEDED
+Attempt 6:	VERIFICATION SUCCEEDED
+Attempt 7:	VERIFICATION SUCCEEDED
+Attempt 8:	VERIFICATION SUCCEEDED
+Attempt 9:	VERIFICATION SUCCEEDED
+Attempt 10:	VERIFICATION SUCCEEDED
+
+============================================================= Profiling Results ==============================================================
+
+Total Initialization Time (seconds): 	1.879835e-02
+OpenCL Setup Time (seconds): 	1.252239e-01
+Main RK4 Loop (seconds/timestep) -> 	Average: 	2.389002e-04 	Min: 	2.374721e-04 	Max: 	2.409911e-04 	STDDEV: 	2.994949e-07
+Eval_Rhs      (seconds/timestep) -> 	Average: 	1.433259e-04 	Min: 	1.423240e-04 	Max: 	1.438212e-04 	STDDEV: 	1.996035e-07
+Eval_K        (seconds/timestep) -> 	Average: 	3.471422e-05 	Min: 	3.430367e-05 	Max: 	3.524303e-05 	STDDEV: 	7.298865e-08
+Update_D      (seconds/timestep) -> 	Average: 	3.377771e-05 	Min: 	3.342628e-05 	Max: 	3.422976e-05 	STDDEV: 	6.633540e-08
+Update_H      (seconds/timestep) -> 	Average: 	1.185727e-05 	Min: 	1.170158e-05 	Max: 	1.201153e-05 	STDDEV: 	3.857381e-08
+MPI Overhead  (seconds/timestep) -> 	Average: 	0.000000e+00 	Min: 	0.000000e+00 	Max: 	0.000000e+00 	STDDEV: 	0.000000e+00
+
+==============================================================================================================================================
