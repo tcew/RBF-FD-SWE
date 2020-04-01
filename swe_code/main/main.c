@@ -335,7 +335,8 @@ int main(int argc, char** argv) {
     // hard code OpenCL device
     char occaConfig[BUFSIZ];
     //    sprintf(occaConfig, "mode: 'OpenCL'  , device_id: %d, platform_id: %d", deviceID, platformID);
-    sprintf(occaConfig, "mode: 'CUDA'  , device_id: %d, platform_id: %d", deviceID, platformID);
+    // sprintf(occaConfig, "mode: 'CUDA'  , device_id: %d, platform_id: %d", deviceID, platformID);
+    sprintf(occaConfig, "mode: 'OpenMP'");
     printf("SWE:occaConfig=%s\n", occaConfig);
     
     // initialize OCCA device
