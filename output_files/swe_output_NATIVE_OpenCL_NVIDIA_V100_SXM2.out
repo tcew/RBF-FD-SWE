@@ -52,13 +52,13 @@ Attempt 10:	VERIFICATION SUCCEEDED
 
 ============================================================= Profiling Results ==============================================================
 
-Total Initialization Time (seconds): 	1.879835e-02
-OpenCL Setup Time (seconds): 	1.252239e-01
-Main RK4 Loop (seconds/timestep) -> 	Average: 	2.389002e-04 	Min: 	2.374721e-04 	Max: 	2.409911e-04 	STDDEV: 	2.994949e-07
-Eval_Rhs      (seconds/timestep) -> 	Average: 	1.433259e-04 	Min: 	1.423240e-04 	Max: 	1.438212e-04 	STDDEV: 	1.996035e-07
-Eval_K        (seconds/timestep) -> 	Average: 	3.471422e-05 	Min: 	3.430367e-05 	Max: 	3.524303e-05 	STDDEV: 	7.298865e-08
-Update_D      (seconds/timestep) -> 	Average: 	3.377771e-05 	Min: 	3.342628e-05 	Max: 	3.422976e-05 	STDDEV: 	6.633540e-08
-Update_H      (seconds/timestep) -> 	Average: 	1.185727e-05 	Min: 	1.170158e-05 	Max: 	1.201153e-05 	STDDEV: 	3.857381e-08
+Total Initialization Time (seconds): 	1.908398e-02
+OpenCL Setup Time (seconds): 	1.280982e-01
+Main RK4 Loop (seconds/timestep) -> 	Average: 	2.391956e-04 	Min: 	2.374315e-04 	Max: 	2.426052e-04 	STDDEV: 	4.615974e-07
+Eval_Rhs      (seconds/timestep) -> 	Average: 	1.434386e-04 	Min: 	1.423407e-04 	Max: 	1.447630e-04 	STDDEV: 	2.880046e-07
+Eval_K        (seconds/timestep) -> 	Average: 	3.488612e-05 	Min: 	3.450394e-05 	Max: 	3.568411e-05 	STDDEV: 	1.019351e-07
+Update_D      (seconds/timestep) -> 	Average: 	3.359413e-05 	Min: 	3.326416e-05 	Max: 	3.394127e-05 	STDDEV: 	6.427510e-08
+Update_H      (seconds/timestep) -> 	Average: 	1.184011e-05 	Min: 	1.161814e-05 	Max: 	1.209736e-05 	STDDEV: 	4.274606e-08
 MPI Overhead  (seconds/timestep) -> 	Average: 	0.000000e+00 	Min: 	0.000000e+00 	Max: 	0.000000e+00 	STDDEV: 	0.000000e+00
 
 ==============================================================================================================================================
