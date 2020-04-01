@@ -11,7 +11,7 @@ RCM_DIR	            =	$(SOURCE_DIR)/rcm
 LAYOUT_DIR	    =	$(SOURCE_DIR)/layout
 MPI_DIR		    =	$(SOURCE_DIR)/mpi
 OCL_DIR		    =	$(SOURCE_DIR)/ocl
-OCC_DIR	    =	$(SOURCE_DIR)/occa
+OCC_DIR		    =	$(SOURCE_DIR)/occa
 COMMON_DIR	    =	$(MAIN_DIR)
 
 # header includes
@@ -22,9 +22,9 @@ INCLUDE_LAYOUT	    =	-I$(LAYOUT_DIR)/include
 INCLUDE_MPI	    =	-I$(MPI_DIR)/include
 INCLUDE_MAIN	    =	-I$(MAIN_DIR)/include
 INCLUDE_OCL	    =	-I$(OCL_DIR)/include
-INCLUDE_OCCA	    =	-I$(OCC_DIR)/include
+INCLUDE_OCC	    =	-I$(OCC_DIR)/include
 
-INCLUDE_ALL	    =	$(INCLUDE_COMMON) $(INCLUDE_IO) $(INCLUDE_RCM) $(INCLUDE_LAYOUT) $(INCLUDE_MPI) $(INCLUDE_MAIN) $(INCLUDE_OCL) $(INCLUDE_OCCA)
+INCLUDE_ALL	    =	$(INCLUDE_COMMON) $(INCLUDE_IO) $(INCLUDE_RCM) $(INCLUDE_LAYOUT) $(INCLUDE_MPI) $(INCLUDE_MAIN) $(INCLUDE_OCL) $(INCLUDE_OCC)
 
 # libs (TW: added math library)
 SWE_LIBS	    =   $(MPI_DIR)/swe_mpi.a $(IO_DIR)/swe_io.a $(RCM_DIR)/swe_rcm.a $(LAYOUT_DIR)/swe_dl.a $(MAIN_DIR)/swe_main.a $(OCL_DIR)/swe_ocl.a $(OCC_DIR)/swe_occa.a -lm
@@ -69,16 +69,15 @@ endif
 	CONFIG		+=	$(OCL_FLAGS)
 endif
 
-# OpenCL
+# OCCA
 ifeq ($(OCCA),1)
-#include ${OCC_DIR}/scripts/Makefile
-#temporary
-OCCA_LIBS = -lOpenCL
-	SWE_LIBS	+=	$(OCL_LIBS)
-	CONFIG		+=	$(OCL_FLAGS)
+
 CONFIG += -DUSE_OCCA
-SWE_LIBS += $(OCCA_LIBS)
-CONFIG += $(OCCA_FLAGS)
+SWE_LIBS += $(OCC_LIBS)
+CONFIG += $(OCC_FLAGS)
+
+SWE_LIBS +=  -L$(OCCA_DIR)/lib -locca
+
 endif
 
 ifeq ($(SPLIT_DEV),1)
@@ -148,7 +147,7 @@ ifndef EXEC
 endif
 
 # standard compiler flags
-CFLAGS	            +=	$(C99_FLAGS) $(ARCH_FLAGS) $(OPT_FLAGS) $(SMPAR_FLAGS) $(CONFIG)
+CFLAGS	            +=	$(C99_FLAGS) $(ARCH_FLAGS) $(OPT_FLAGS) $(SMPAR_FLAGS) $(CONFIG) $(flags)
 
 # define MAKE_DEFS condition to avoid including twice
 MAKE_DEFS           =   true
