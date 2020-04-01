@@ -11,6 +11,7 @@ RCM_DIR	            =	$(SOURCE_DIR)/rcm
 LAYOUT_DIR	    =	$(SOURCE_DIR)/layout
 MPI_DIR		    =	$(SOURCE_DIR)/mpi
 OCL_DIR		    =	$(SOURCE_DIR)/ocl
+OCC_DIR	    =	$(SOURCE_DIR)/occa
 COMMON_DIR	    =	$(MAIN_DIR)
 
 # header includes
@@ -21,11 +22,12 @@ INCLUDE_LAYOUT	    =	-I$(LAYOUT_DIR)/include
 INCLUDE_MPI	    =	-I$(MPI_DIR)/include
 INCLUDE_MAIN	    =	-I$(MAIN_DIR)/include
 INCLUDE_OCL	    =	-I$(OCL_DIR)/include
+INCLUDE_OCCA	    =	-I$(OCC_DIR)/include
 
-INCLUDE_ALL	    =	$(INCLUDE_COMMON) $(INCLUDE_IO) $(INCLUDE_RCM) $(INCLUDE_LAYOUT) $(INCLUDE_MPI) $(INCLUDE_MAIN) $(INCLUDE_OCL)
+INCLUDE_ALL	    =	$(INCLUDE_COMMON) $(INCLUDE_IO) $(INCLUDE_RCM) $(INCLUDE_LAYOUT) $(INCLUDE_MPI) $(INCLUDE_MAIN) $(INCLUDE_OCL) $(INCLUDE_OCCA)
 
-# libs
-SWE_LIBS	    =   $(MPI_DIR)/swe_mpi.a $(IO_DIR)/swe_io.a $(RCM_DIR)/swe_rcm.a $(LAYOUT_DIR)/swe_dl.a $(MAIN_DIR)/swe_main.a $(OCL_DIR)/swe_ocl.a
+# libs (TW: added math library)
+SWE_LIBS	    =   $(MPI_DIR)/swe_mpi.a $(IO_DIR)/swe_io.a $(RCM_DIR)/swe_rcm.a $(LAYOUT_DIR)/swe_dl.a $(MAIN_DIR)/swe_main.a $(OCL_DIR)/swe_ocl.a $(OCC_DIR)/swe_occa.a -lm
 
 # linux utilities
 MKDIR_P		    =	mkdir -p
@@ -56,6 +58,8 @@ endif
 
 # OpenCL
 ifeq ($(OPENCL),1)
+# TW: added OpenCL library
+	OCL_LIBS 	=   -lOpenCL
 	CONFIG 		+=  -DUSE_OCL
 ifeq ($(shell uname -s), Darwin)
 	OCL_LIBS 	=   -framework OpenCL
@@ -63,6 +67,18 @@ ifeq ($(shell uname -s), Darwin)
 endif
 	SWE_LIBS	+=	$(OCL_LIBS)
 	CONFIG		+=	$(OCL_FLAGS)
+endif
+
+# OpenCL
+ifeq ($(OCCA),1)
+#include ${OCC_DIR}/scripts/Makefile
+#temporary
+OCCA_LIBS = -lOpenCL
+	SWE_LIBS	+=	$(OCL_LIBS)
+	CONFIG		+=	$(OCL_FLAGS)
+CONFIG += -DUSE_OCCA
+SWE_LIBS += $(OCCA_LIBS)
+CONFIG += $(OCCA_FLAGS)
 endif
 
 ifeq ($(SPLIT_DEV),1)

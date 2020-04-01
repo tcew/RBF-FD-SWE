@@ -457,7 +457,7 @@ void verify_output(fType* H1, fType* H2) {
     int global_count;
 
     #ifdef USE_MPI
-    MPI_Reduce((const void *) &count, (void*) &global_count, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Reduce((void *) &count, (void*) &global_count, 1, MPI_INT, MPI_MAX, 0, MPI_COMM_WORLD);
     #else
     global_count = count;
     #endif

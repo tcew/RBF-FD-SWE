@@ -31,7 +31,11 @@ mpi:
 ocl:
 	@$(MAKE) -C $(OCL_DIR)
 
-swe: io rcm layout mpi ocl main
+occa:
+	@$(MAKE) -C $(OCC_DIR)
+
+
+swe: io rcm layout mpi ocl main occa
 	$(MKDIR_P) $(EXEC_DIR)
 	$(CC) $(CFLAGS) $(SWE_LIBS) -o $(EXEC_DIR)/$(EXEC)
 
@@ -43,5 +47,6 @@ clean:
 	@$(MAKE) -C $(LAYOUT_DIR) clean
 	@$(MAKE) -C $(MPI_DIR) clean
 	@$(MAKE) -C $(OCL_DIR) clean
+	@$(MAKE) -C $(OCC_DIR) clean
 	rm -f $(SOURCE_DIR)/*/*.a $(EXEC_DIR)/$(EXEC)
 
