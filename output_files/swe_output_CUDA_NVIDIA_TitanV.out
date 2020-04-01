@@ -19,7 +19,7 @@ USE RCM Node Ordering: yes
 
 ================================================================================================================================================================================================================
 
-SWE:occaConfig=mode: 'CUDA'  , device_id: 0, platform_id: 0
+SWE:occaConfig=mode: 'CUDA'  , device_id: 0
 Attempt 1:	VERIFICATION SUCCEEDED
 Attempt 2:	VERIFICATION SUCCEEDED
 Attempt 3:	VERIFICATION SUCCEEDED
@@ -33,13 +33,13 @@ Attempt 10:	VERIFICATION SUCCEEDED
 
 ============================================================= Profiling Results ==============================================================
 
-Total Initialization Time (seconds): 	4.593825e-02
-OCCA Setup Time (seconds): 	1.638224e-01
-Main RK4 Loop (seconds/timestep) -> 	Average: 	1.330267e-03 	Min: 	1.308310e-03 	Max: 	1.355035e-03 	STDDEV: 	4.563685e-06
-Eval_Rhs      (seconds/timestep) -> 	Average: 	1.181000e-03 	Min: 	1.159964e-03 	Max: 	1.206615e-03 	STDDEV: 	4.596288e-06
-Eval_K        (seconds/timestep) -> 	Average: 	5.933452e-05 	Min: 	5.909920e-05 	Max: 	5.971670e-05 	STDDEV: 	5.814584e-08
-Update_D      (seconds/timestep) -> 	Average: 	5.220890e-05 	Min: 	5.195856e-05 	Max: 	5.308628e-05 	STDDEV: 	9.573033e-08
-Update_H      (seconds/timestep) -> 	Average: 	2.061224e-05 	Min: 	2.048016e-05 	Max: 	2.080679e-05 	STDDEV: 	2.671608e-08
+Total Initialization Time (seconds): 	4.149699e-02
+OCCA Setup Time (seconds): 	1.689978e+00
+Main RK4 Loop (seconds/timestep) -> 	Average: 	1.992335e-04 	Min: 	1.983500e-04 	Max: 	2.022552e-04 	STDDEV: 	3.346477e-07
+Eval_Rhs      (seconds/timestep) -> 	Average: 	1.246542e-04 	Min: 	1.241326e-04 	Max: 	1.252151e-04 	STDDEV: 	2.099399e-07
+Eval_K        (seconds/timestep) -> 	Average: 	2.825570e-05 	Min: 	2.807379e-05 	Max: 	2.885580e-05 	STDDEV: 	6.783086e-08
+Update_D      (seconds/timestep) -> 	Average: 	2.705312e-05 	Min: 	2.688408e-05 	Max: 	2.757788e-05 	STDDEV: 	5.897326e-08
+Update_H      (seconds/timestep) -> 	Average: 	9.689808e-06 	Min: 	9.531975e-06 	Max: 	9.906292e-06 	STDDEV: 	3.848788e-08
 MPI Overhead  (seconds/timestep) -> 	Average: 	0.000000e+00 	Min: 	0.000000e+00 	Max: 	0.000000e+00 	STDDEV: 	0.000000e+00
 
 ==============================================================================================================================================
