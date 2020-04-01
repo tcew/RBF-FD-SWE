@@ -49,6 +49,7 @@
         rhs.x = (H.x * dH_dx.x) + (H.y * dH_dy.x) + (H.z * dH_dz.x);
 	rhs.y = (H.x * dH_dx.y) + (H.y * dH_dy.y) + (H.z * dH_dz.y);
 	rhs.z = (H.x * dH_dx.z) + (H.y * dH_dy.z) + (H.z * dH_dz.z);
+	rhs.w = (H.x * dH_dx.w) + (H.y * dH_dy.w) + (H.z * dH_dz.w);
 
 	double xi = x[i], yi = y[i], zi = z[i], fi = f[i];
 	
@@ -58,6 +59,7 @@
         rhs.x *= -1.;
 	rhs.y *= -1.;
 	rhs.z *= -1.;
+	rhs.w *= -1.;
 	
         // Project momentum equations to confine motion to the surface of the sphere and add hyperviscosity
         // Get indices of x, y, and z components of projection matrices
