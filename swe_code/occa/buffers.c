@@ -12,12 +12,14 @@ extern PSMD_struct* LPSMD;
 void load_buffer_fType(occaDevice device, occaMemory* buff, fType* buff_source, int buff_size) {
   *buff = occaDeviceMalloc(device, sizeof(fType)*buff_size, buff_source, occaDefault);
 
-  printf("Allocating devie array with %d bytes\n", sizeof(fType)*buff_size);
+  printf("Allocating float device array with %d bytes\n", sizeof(fType)*buff_size);
 }
 
 // Read array of ints
 void load_buffer_int(occaDevice device, occaMemory *buff, int* buff_source, int buff_size) {
   *buff = occaDeviceMalloc(device, sizeof(int)*buff_size, buff_source, occaDefault);
+
+  printf("Allocating int device array with %d bytes\n", sizeof(fType)*buff_size);
 }
 
 // Copy input arrays to buffers and initialize the RK kernel inputs

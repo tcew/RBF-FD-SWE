@@ -29,7 +29,7 @@
 
 #pragma unroll
         for (int j = 0; j < Nnbr; j++){
-            int dmid = i*(padded_Nnbr) + j; // DM id = padded_Nnbr*i + j
+            int dmid = i*(padded_Nnbr) + j; // DM id = padded_Nnbr*i + j (this is really in the wrong order)
             H = K[idx[dmid]];
         
             // Update sums
@@ -50,14 +50,14 @@
 	rhs.y = (H.x * dH_dx.y) + (H.y * dH_dy.y) + (H.z * dH_dz.y);
 	rhs.z = (H.x * dH_dx.z) + (H.y * dH_dy.z) + (H.z * dH_dz.z);
 
-	dfloat xi = x[i], yi = y[i], zi = z[i], fi = f[i];
+	double xi = x[i], yi = y[i], zi = z[i], fi = f[i];
 	
         rhs.x += fi * ((yi * H.z) - (zi * H.y)) + dH_dx.w;
         rhs.y += fi * ((zi * H.x) - (xi * H.z)) + dH_dy.w;
         rhs.z += fi * ((xi * H.y) - (yi * H.x)) + dH_dz.w;
-        rhs.x *= -1;
-	rhs.y *= -1;
-	rhs.z *= -1;
+        rhs.x *= -1.;
+	rhs.y *= -1.;
+	rhs.z *= -1.;
 	
         // Project momentum equations to confine motion to the surface of the sphere and add hyperviscosity
         // Get indices of x, y, and z components of projection matrices
