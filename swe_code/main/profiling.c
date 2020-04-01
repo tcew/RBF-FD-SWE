@@ -39,6 +39,7 @@ timing_struct init_timer(int nattempts) {
     timing_struct timer;
     timer.t_init = 0.0;
     timer.t_ocl = 0.0;
+    timer.t_occa = 0.0;
 
     timer.t_main = (double*) calloc(nattempts, sizeof(double));
     timer.t_eval_rhs = (double*) calloc(nattempts, sizeof(double));
@@ -67,10 +68,12 @@ void process_profiling_results() {
     MPI_Reduce(local_timer.t_update_H, global_sum_timer.t_update_H, nattempts, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(local_timer.t_mpi, global_sum_timer.t_mpi, nattempts, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&local_timer.t_ocl, &global_sum_timer.t_ocl, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&local_timer.t_occa, &global_sum_timer.t_occa, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	
     #else
     global_sum_timer.t_init = local_timer.t_init;
     global_sum_timer.t_ocl = local_timer.t_ocl;
+    global_sum_timer.t_occa = local_timer.t_occa;
     memcpy(global_sum_timer.t_main, local_timer.t_main, sizeof(double) * nattempts);
     memcpy(global_sum_timer.t_eval_rhs, local_timer.t_eval_rhs, sizeof(double) * nattempts);
     memcpy(global_sum_timer.t_eval_K, local_timer.t_eval_K, sizeof(double) * nattempts);
@@ -87,6 +90,7 @@ void process_profiling_results() {
 		
         average_timer.t_init = global_sum_timer.t_init / mpi_size;
         average_timer.t_ocl = global_sum_timer.t_ocl / mpi_size;
+	average_timer.t_occa = global_sum_timer.t_occa / mpi_size;
         
         for (int i = 0; i < nattempts; i++) {
 
@@ -157,7 +161,15 @@ void process_profiling_results() {
             printf("OpenCL Setup Time (seconds): \t%e\n", average_timer.t_ocl);
             #endif
         }
-        printf("Main RK4 Loop (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_main[0], min_timer.t_main[0], max_timer.t_main[0], sqrt(stddev2_timer.t_main[0]) / nattempts);
+
+        if (sim_params.OCCA == 1) {       
+            #ifdef USE_OCCA
+            printf("OCCA Setup Time (seconds): \t%e\n", average_timer.t_occa);
+            #endif
+        }
+
+
+	printf("Main RK4 Loop (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_main[0], min_timer.t_main[0], max_timer.t_main[0], sqrt(stddev2_timer.t_main[0]) / nattempts);
         printf("Eval_Rhs      (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_eval_rhs[0], min_timer.t_eval_rhs[0], max_timer.t_eval_rhs[0], sqrt(stddev2_timer.t_eval_rhs[0]) / nattempts);
         printf("Eval_K        (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_eval_K[0], min_timer.t_eval_K[0], max_timer.t_eval_K[0], sqrt(stddev2_timer.t_eval_K[0]) / nattempts);
         printf("Update_D      (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_update_D[0], min_timer.t_update_D[0], max_timer.t_update_D[0], sqrt(stddev2_timer.t_update_D[0]) / nattempts);

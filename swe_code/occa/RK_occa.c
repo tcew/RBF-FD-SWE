@@ -13,12 +13,16 @@ void RK_substep_occa(occaKernel eval_RHS_kernel,
 		     occaKernel update_H_kernel,		     
 		     occaDevice device,
 		     LPSMD_buffers *LPSMD_buffs,
-		     occaMemory H_buff,occaMemory F_buff,occaMemory K_buff,occaMemory D_buff,
+		     occaMemory H_buff,
+		     occaMemory F_buff,
+		     occaMemory K_buff,
+		     occaMemory D_buff,
 		     int substep_id) {
     
   // full RK4 timestep length
   const fType dt = LPSMD->dt;
-    
+  printf("substep=%d\n", substep_id);
+  
   switch(substep_id) {
   case 0:
     // get F_0 = d/dt(K_0 = H)
@@ -31,7 +35,7 @@ void RK_substep_occa(occaKernel eval_RHS_kernel,
             
   case 1:
     // get F_1 = d/dt(K_1 = H + (dt/2) * F_0)
-    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
+    //    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
     // update D += 2 * F_1
     update_D_occa(update_D_kernel, device, F_buff, D_buff, 2.0);
     // evaluate K_2 = H + (dt/2) * F_0
@@ -40,7 +44,7 @@ void RK_substep_occa(occaKernel eval_RHS_kernel,
             
   case 2:
     // get F_2 = d/dt(K_2 = H + (dt/2) * F_1)
-    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
+    //    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
     // update D += 2 * F_2
     update_D_occa(update_D_kernel, device, F_buff, D_buff, 2.0);
     // evaluate K_3 = H + dt * F_0
@@ -49,7 +53,7 @@ void RK_substep_occa(occaKernel eval_RHS_kernel,
             
   case 3:
     // get F_3 = d/dt(K_3 = H + dt * F_2)
-    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
+    //eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
     // update D += F_3
     update_D_occa(update_D_kernel, device, F_buff, D_buff, 1.0);
     // add everything together to get H_n+1
@@ -70,7 +74,7 @@ void eval_RHS_occa(occaKernel kernel, occaDevice device,
 #else
   int tile_length = SIMD_LENGTH;
 #endif
-    
+
   // global size and work-group size- wgsize is flexible within device limits.
   int wgsize = 128;
   int wgcount = ((LPSMD->compute_size)/tile_length)/wgsize + 1;
@@ -95,7 +99,7 @@ void eval_RHS_occa(occaKernel kernel, occaDevice device,
 		LPSMD_buffs->gradghm,
 		F_buff,
 		occaDouble(LPSMD->gh0),
-		occaInt(LPSMD->compute_size),
+		occaInt(LPSMD->compute_size), // padded_Nnodes
 		occaInt(LPSMD->padded_Nnbr),
 		occaInt(LPSMD->Nnbr),
 		occaInt(LPSMD->compute_pid_s));
@@ -111,8 +115,8 @@ void copy_arr_occa(occaKernel kernel, occaDevice device,
   // global size and work-group size
   int wgsize = 64;
   int wgcount = ((LPSMD->compute_size)*4)/ wgsize + 1;
-
-  occaKernelRun(kernel, occaInt(wgcount), occaInt(wgsize), D_buff, F_buff, occaInt(4*LPSMD->compute_size));
+  int cnt =4*LPSMD->compute_size;
+  occaKernelRun(kernel, occaInt(wgcount), occaInt(wgsize), D_buff, F_buff, occaInt(cnt));
 
   // add error checking later
   occaDeviceFinish(device);

@@ -334,8 +334,8 @@ int main(int argc, char** argv) {
 
     // hard code OpenCL device
     char occaConfig[BUFSIZ];
-    //    sprintf(occaConfig, "mode: 'OpenCL'  , device_id: %d, platform_id: %d", deviceID, platformID);
-    sprintf(occaConfig, "mode: 'CUDA'  , device_id: %d, platform_id: %d", deviceID, platformID);
+    sprintf(occaConfig, "mode: 'OpenCL'  , device_id: %d, platform_id: %d", deviceID, platformID);
+    //    sprintf(occaConfig, "mode: 'CUDA'  , device_id: %d, platform_id: %d", deviceID, platformID);
 
     // initialize OCCA device
     device = occaCreateDeviceFromString(occaConfig);
@@ -411,7 +411,7 @@ int main(int argc, char** argv) {
 
     if (sim_params.OCCA == 1) {
 #ifdef USE_OCCA
-      // Reset H and K vectors- leave maps open for MPI implementation
+      // allocate device arrays
       H_buff = occaDeviceMalloc(device, sizeof(fType) * LPSMD->patch_size*4, H, occaDefault);
       K_buff = occaDeviceMalloc(device, sizeof(fType) * LPSMD->patch_size*4, H, occaDefault);
 #endif
@@ -500,10 +500,18 @@ int main(int argc, char** argv) {
     if (sim_params.OCL == 1) {
             
 #ifdef USE_OCL
-            
       // Copy contents of H_buff back to H array
       H = (fType*)mapBuffer(commandQueue, H_buff, CL_MAP_READ, sizeof(fType)*LPSMD->patch_size*4);
       unmapBuffer(commandQueue, H_buff, H);
+#endif
+            
+    }
+
+    if (sim_params.OCCA == 1) {
+            
+#ifdef USE_OCCA
+      // Copy contents of H_buff back to H array
+      occaCopyMemToPtr(H, H_buff, sizeof(fType)*LPSMD->patch_size*4, 0, occaDefault);
 #endif
             
     }
