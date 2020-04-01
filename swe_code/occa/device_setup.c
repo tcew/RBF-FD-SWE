@@ -8,7 +8,7 @@ extern int mpi_rank;
 extern int mpi_size;
 
 // Set all inputs for the kernel that evaluates the SWE righthand side
-void set_eval_RHS_args(cl_kernel kernel, LPSMD_buffers* LPSMD_buffs, cl_mem K_buff, cl_mem F_buff, fType gh0, int Nnodes, int padded_Nnbr, int Nnbr, int compute_pid_s){
+void set_eval_RHS_args(cl_kernel kernel, LPSMD_buffers* LPSMD_buffs, cl_mem K_buff, cl_mem F_buff, fType gh0, int Nnodes){
     cl_int err = 0;
 	
     err = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void*)&(K_buff));

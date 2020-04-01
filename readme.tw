@@ -1,1 +1,1 @@
-CONFIG_DIR=occa make -j EXEC=occa
+CONFIG_DIR=occa make EXEC=swe_occa.exe
