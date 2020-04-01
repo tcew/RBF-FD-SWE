@@ -11,6 +11,8 @@ extern PSMD_struct* LPSMD;
 // Read array of fTypes
 void load_buffer_fType(occaDevice device, occaMemory* buff, fType* buff_source, int buff_size) {
   *buff = occaDeviceMalloc(device, sizeof(fType)*buff_size, buff_source, occaDefault);
+
+  printf("Allocating devie array with %d bytes\n", sizeof(fType)*buff_size);
 }
 
 // Read array of ints

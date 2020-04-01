@@ -16,9 +16,13 @@ void RK_substep_occa(occaKernel,
 		     occaKernel,
 		     occaKernel,
 		     occaKernel,
-		     occaKernel, occaDevice,
+		     occaKernel,
+		     occaDevice,
 		     LPSMD_buffers *LPSMD_buffs,
-		     occaMemory H_buff,occaMemory F_buff,occaMemory K_buff,occaMemory D_buff,
+		     occaMemory H_buff,
+		     occaMemory F_buff,
+		     occaMemory K_buff,
+		     occaMemory D_buff,
 		     int);
 
 // Calculate righthand side of the differential equation

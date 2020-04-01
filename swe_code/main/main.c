@@ -407,7 +407,18 @@ int main(int argc, char** argv) {
 #endif
             
     }
-        
+
+    if (sim_params.OCCA == 1) {
+#ifdef USE_OCCA
+      // Reset H and K vectors- leave maps open for MPI implementation
+      H_buff = occaDeviceMalloc(device, sizeof(fType) * LPSMD->patch_size*4, H, occaDefault);
+      K_buff = occaDeviceMalloc(device, sizeof(fType) * LPSMD->patch_size*4, H, occaDefault);
+#endif
+    }
+
+
+
+    
 #ifdef USE_MPI
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -422,7 +433,11 @@ int main(int argc, char** argv) {
 	if (sim_params.OCL == 1) {
                     
 #ifdef USE_OCL
-	  RK_substep_ocl(eval_RHS_kernel, copy_arr_kernel, update_D_kernel, eval_K_kernel, update_H_kernel, commandQueue, rk_val);
+	  RK_substep_ocl(eval_RHS_kernel,
+			 copy_arr_kernel,
+			 update_D_kernel,
+			 eval_K_kernel,
+			 update_H_kernel, commandQueue, rk_val);
                     
 #ifdef MPI
 	  if (mpi_size > 1) {
@@ -440,8 +455,18 @@ int main(int argc, char** argv) {
 	else if (sim_params.OCCA == 1) {
 	  
 #ifdef USE_OCCA
-	  RK_substep_occa(eval_RHS_kernel, copy_arr_kernel, update_D_kernel, eval_K_kernel, update_H_kernel, device,
-			  LPSMD_buffs, H_buff, F_buff, K_buff, D_buff, rk_val);
+	  RK_substep_occa(eval_RHS_kernel,
+			  copy_arr_kernel,
+			  update_D_kernel,
+			  eval_K_kernel,
+			  update_H_kernel,
+			  device,
+			  LPSMD_buffs,
+			  H_buff,
+			  F_buff, 
+			  K_buff,
+			  D_buff,
+			  rk_val);
                     
 #ifdef MPI
 	  if (mpi_size > 1) {
