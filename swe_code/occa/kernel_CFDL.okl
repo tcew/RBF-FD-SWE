@@ -15,7 +15,7 @@
   for(int wg=0;wg<wgcount;++wg;@outer(0)){
     for(int wgi=0;wgi<wgsize;++wgi;@inner(0)){
       int i = wgi + wgsize*wg; // could also pass wgsize as a compiler var
-      
+
       if (i < padded_Nnodes) {
 	
         double4 H;
@@ -26,7 +26,7 @@
         double4 dH_dy = (double4){0.0,0.0,0.0,0.0};
         double4 dH_dz = (double4){0.0,0.0,0.0,0.0};
         double4 LH = (double4){0.0,0.0,0.0,0.0};
-	
+
 #pragma unroll
         for (int j = 0; j < Nnbr; j++){
             int dmid = i*(padded_Nnbr) + j; // DM id = padded_Nnbr*i + j
@@ -50,9 +50,11 @@
 	rhs.y = (H.x * dH_dx.y) + (H.y * dH_dy.y) + (H.z * dH_dz.y);
 	rhs.z = (H.x * dH_dx.z) + (H.y * dH_dy.z) + (H.z * dH_dz.z);
 
-        rhs.x += f[i] * ((y[i] * H.z) - (z[i] * H.y)) + dH_dx.w;
-        rhs.y += f[i] * ((z[i] * H.x) - (x[i] * H.z)) + dH_dy.w;
-        rhs.z += f[i] * ((x[i] * H.y) - (y[i] * H.x)) + dH_dz.w;
+	dfloat xi = x[i], yi = y[i], zi = z[i], fi = f[i];
+	
+        rhs.x += fi * ((yi * H.z) - (zi * H.y)) + dH_dx.w;
+        rhs.y += fi * ((zi * H.x) - (xi * H.z)) + dH_dy.w;
+        rhs.z += fi * ((xi * H.y) - (yi * H.x)) + dH_dz.w;
         rhs.x *= -1;
 	rhs.y *= -1;
 	rhs.z *= -1;
@@ -62,23 +64,22 @@
         int x_id = 3*i;
         int y_id = 3*i + 1;
         int z_id = 3*i + 2;
-    
+
+	double4 Fi = LH;
+
         // Evaluate projections and apply hyperviscosity
-        F[i].x = (p_u[x_id] * rhs.x) + (p_u[y_id] * rhs.y) + (p_u[z_id] * rhs.z);
-        F[i].y = (p_v[x_id] * rhs.x) + (p_v[y_id] * rhs.y) + (p_v[z_id] * rhs.z);
-        F[i].z = (p_w[x_id] * rhs.x) + (p_w[y_id] * rhs.y) + (p_w[z_id] * rhs.z);
-    
+	Fi.x += (p_u[x_id] * rhs.x) + (p_u[y_id] * rhs.y) + (p_u[z_id] * rhs.z);
+        Fi.y += (p_v[x_id] * rhs.x) + (p_v[y_id] * rhs.y) + (p_v[z_id] * rhs.z);
+        Fi.z += (p_w[x_id] * rhs.x) + (p_w[y_id] * rhs.y) + (p_w[z_id] * rhs.z);
+	
         // Calculate the RHS of the geopotential equation
-        F[i].w = rhs.w +
+        Fi.w += rhs.w +
 	  (H.x * gradghm[x_id]) +
 	  (H.y * gradghm[y_id]) +
 	  (H.z * gradghm[z_id]) -
 	  (H.w + gh0 - ghm[i]) * (dH_dx.x + dH_dy.y + dH_dz.z);
 
-	F[i].x += LH.x;
-	F[i].y += LH.y;
-	F[i].z += LH.z;
-	F[i].w += LH.w;
+	F[i] = Fi;
       }
     }
   }
