@@ -9,7 +9,7 @@ export SWE_NATTEMPTS=10
 export SWE_USE_RCM=1
 export SWE_USE_NETCDF=0
 export SWE_USE_OCCA=1
-export SWE_USE_OCL=1
+export SWE_USE_OCL=0
 
 cd `dirname "${BASH_SOURCE[0]}"`
 cd ../..
