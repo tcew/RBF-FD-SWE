@@ -120,7 +120,7 @@ void eval_RHS_occa(occaKernel kernel, occaDevice device,
 		occaInt(LPSMD->compute_pid_s));
 
   // TW: NASTY ! Every invocation is blocking
-  occaDeviceFinish(device);
+  //  occaDeviceFinish(device);
   local_timer.t_eval_rhs[local_timer.attempt] +=  (getTime() - t_start);
 }
 
@@ -174,7 +174,7 @@ void eval_combined_occa(occaKernel kernel, occaDevice device,
 		occaInt(LPSMD->compute_pid_s));
 
   // TW: NASTY ! Every invocation is blocking
-  occaDeviceFinish(device);
+  //  occaDeviceFinish(device);
   local_timer.t_eval_combined[local_timer.attempt] +=  (getTime() - t_start);
 }
 
@@ -192,7 +192,7 @@ void copy_arr_occa(occaKernel kernel, occaDevice device,
   occaKernelRun(kernel, occaInt(wgcount), occaInt(wgsize), D_buff, F_buff, occaInt(cnt));
 
   // add error checking later
-  occaDeviceFinish(device);
+  //  occaDeviceFinish(device);
 }
 
 void update_D_occa(occaKernel kernel, occaDevice device,
@@ -207,7 +207,7 @@ void update_D_occa(occaKernel kernel, occaDevice device,
 		F_buff, D_buff, occaFtype(coefficient), occaInt(LPSMD->compute_size));
     
   // error checking later
-  occaDeviceFinish(device);
+  //  occaDeviceFinish(device);
   local_timer.t_update_D[local_timer.attempt] += (getTime() - t_start);
 }
 
@@ -225,7 +225,7 @@ void eval_K_occa(occaKernel kernel, occaDevice device,
 		H_buff, F_buff, K_buff, occaDouble(dt), occaInt(LPSMD->compute_size), occaInt(LPSMD->compute_pid_s));
 		  
   // error check later
-  occaDeviceFinish(device);
+  //  occaDeviceFinish(device);
   local_timer.t_eval_K[local_timer.attempt] +=  (getTime() - t_start);
 }
 
@@ -242,7 +242,7 @@ void update_H_occa(occaKernel kernel, occaDevice device,
 		H_buff, occaFtype(dt), D_buff, K_buff, occaInt(LPSMD->compute_size), occaInt(LPSMD->compute_pid_s));
     
   // error check later
-  occaDeviceFinish(device);
+  //  occaDeviceFinish(device);
   local_timer.t_update_H[local_timer.attempt] +=  (getTime() - t_start);
 }
 #endif
