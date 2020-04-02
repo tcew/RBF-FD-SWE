@@ -2,7 +2,7 @@
 // Modified by Tim Warburton, Spring 2020.
 
 
-@kernel void eval_RHS_kernel(const int wgcount, const int wgsize,
+@kernel void eval_RHS_kernel_old(const int wgcount, const int wgsize,
 			     double4* K,
 			     const int* idx,
 			     const double* Dx, const double* Dy,  const double* Dz,
@@ -40,6 +40,95 @@
             dH_dy.x += dy * H.x; dH_dy.y += dy * H.y;  dH_dy.z += dy * H.z; dH_dy.w += dy * H.w;
             dH_dz.x += dz * H.x; dH_dz.y += dz * H.y;  dH_dz.z += dz * H.z; dH_dz.w += dz * H.w;
             LH.x += Ldmid * H.x; LH.y += Ldmid * H.y;  LH.z += Ldmid * H.z; LH.w += Ldmid * H.w;
+        }
+	
+        // Reset to get H at current node (rather than final neighbor)
+        H = K[i+compute_pid_s];
+        
+        // Evaluate RHS of unconstrained momentum equations
+        rhs.x = (H.x * dH_dx.x) + (H.y * dH_dy.x) + (H.z * dH_dz.x);
+	rhs.y = (H.x * dH_dx.y) + (H.y * dH_dy.y) + (H.z * dH_dz.y);
+	rhs.z = (H.x * dH_dx.z) + (H.y * dH_dy.z) + (H.z * dH_dz.z);
+	rhs.w = (H.x * dH_dx.w) + (H.y * dH_dy.w) + (H.z * dH_dz.w);
+
+	double xi = x[i], yi = y[i], zi = z[i], fi = f[i];
+	
+        rhs.x += fi * ((yi * H.z) - (zi * H.y)) + dH_dx.w;
+        rhs.y += fi * ((zi * H.x) - (xi * H.z)) + dH_dy.w;
+        rhs.z += fi * ((xi * H.y) - (yi * H.x)) + dH_dz.w;
+        rhs.x *= -1.;
+	rhs.y *= -1.;
+	rhs.z *= -1.;
+	rhs.w *= -1.;
+	
+        // Project momentum equations to confine motion to the surface of the sphere and add hyperviscosity
+        // Get indices of x, y, and z components of projection matrices
+        int x_id = 3*i;
+        int y_id = 3*i + 1;
+        int z_id = 3*i + 2;
+
+	double4 Fi = LH;
+
+        // Evaluate projections and apply hyperviscosity
+	Fi.x += (p_u[x_id] * rhs.x) + (p_u[y_id] * rhs.y) + (p_u[z_id] * rhs.z);
+        Fi.y += (p_v[x_id] * rhs.x) + (p_v[y_id] * rhs.y) + (p_v[z_id] * rhs.z);
+        Fi.z += (p_w[x_id] * rhs.x) + (p_w[y_id] * rhs.y) + (p_w[z_id] * rhs.z);
+	
+        // Calculate the RHS of the geopotential equation
+        Fi.w += rhs.w +
+	  (H.x * gradghm[x_id]) +
+	  (H.y * gradghm[y_id]) +
+	  (H.z * gradghm[z_id]) -
+	  (H.w + gh0 - ghm[i]) * (dH_dx.x + dH_dy.y + dH_dz.z);
+
+	F[i] = Fi;
+      }
+    }
+  }
+
+}
+
+
+
+@kernel void eval_RHS_kernel(const int wgcount, const int wgsize,
+			     double4* K,
+			     const int* idx,
+			     const double* Dx, const double* Dy,  const double* Dz,  const double* L,
+  		     	     const double* x,   const double* y, const double* z,
+			     const double* f,  const double* ghm,
+			     const double* p_u,const double* p_v, const double* p_w,
+			     const double* gradghm,  double4* F,
+			     const double gh0, const int padded_Nnodes, const int padded_Nnbr, const int Nnbr, const int compute_pid_s) {
+
+  for(int wg=0;wg<wgcount;++wg;@outer(0)){
+    for(int wgi=0;wgi<wgsize;++wgi;@inner(0)){
+      int i = wgi + wgsize*wg; // could also pass wgsize as a compiler var
+
+      if (i < padded_Nnodes) {
+	
+        double4 H;
+        double4 rhs;
+	
+        // Four-vectors represent u,v,w,h components of the state variable matrices
+        double4 dH_dx = (double4){0.0,0.0,0.0,0.0};
+        double4 dH_dy = (double4){0.0,0.0,0.0,0.0};
+        double4 dH_dz = (double4){0.0,0.0,0.0,0.0};
+        double4 LH = (double4){0.0,0.0,0.0,0.0};
+
+#pragma unroll
+        for (int j = 0; j < Nnbr; j++){
+	  int dmid = i*padded_Nnbr + j; // 
+	  int dmidT = i+ padded_Nnodes*j; // 
+	  H = K[idx[dmidT]];
+	  
+	  // Update sums
+	  // dH_m/d_n = (D^n)_(ij) (H_m)^(ij)
+	  double dx = Dx[dmidT], dy = Dy[dmidT], dz = Dz[dmidT], Ldmid = L[dmidT];
+	  
+	  dH_dx.x += dx * H.x; dH_dx.y += dx * H.y;  dH_dx.z += dx * H.z; dH_dx.w += dx * H.w;
+	  dH_dy.x += dy * H.x; dH_dy.y += dy * H.y;  dH_dy.z += dy * H.z; dH_dy.w += dy * H.w;
+	  dH_dz.x += dz * H.x; dH_dz.y += dz * H.y;  dH_dz.z += dz * H.z; dH_dz.w += dz * H.w;
+	  LH.x += Ldmid * H.x; LH.y += Ldmid * H.y;  LH.z += Ldmid * H.z; LH.w += Ldmid * H.w;
         }
 	
         // Reset to get H at current node (rather than final neighbor)
@@ -151,4 +240,6 @@
   }
   return;
 }
+
+
 

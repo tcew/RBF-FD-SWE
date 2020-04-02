@@ -164,6 +164,7 @@ typedef struct GSMD_struct {
 	fType gamma;	// hyperviscosity coefficient
 
 	int* idx;	// Nnodes x Nnbr
+
 	fType* Dx;	// Nnodes x Nnbr
 	fType* Dy;	// Nnodes x Nnbr
 	fType* Dz;	// Nnodes x Nnbr
@@ -268,12 +269,18 @@ typedef struct LPSMD_buffers {
 #ifdef USE_OCCA
 typedef struct LPSMD_buffers {
     occaMemory idx;     // Objects are the same as the PSMD objects, but OpenCL input buffers
-  
     occaMemory Dx;
     occaMemory Dy;
     occaMemory Dz;
     occaMemory L;
-    
+
+    occaMemory idxT;     // Objects are the same as the PSMD objects, but OpenCL input buffers
+    occaMemory DxT;
+    occaMemory DyT;
+    occaMemory DzT;
+    occaMemory LT;
+
+  
     occaMemory x;
     occaMemory y;
     occaMemory z;
