@@ -179,6 +179,116 @@
 
 
 
+
+@kernel void eval_combined_kernel(const int wgcount, const int wgsize,
+				  @restrict const int* idx,
+				  @restrict const double* Dx, @restrict const double* Dy,  @restrict const double* Dz,  @restrict const double* L,
+				  @restrict const double* x,   @restrict const double* y, @restrict const double* z,
+				  @restrict const double* f,  @restrict const double* ghm,
+				  @restrict const double* p_u,@restrict const double* p_v, @restrict const double* p_w,
+				  @restrict const double* gradghm,
+				  const double sc1,
+				  const double sc2,
+				  @restrict const double4* K,
+				  @restrict double4* F,
+				  @restrict double4* D,
+				  @restrict double4* Hbuff,
+				  @restrict double4* K2,
+				  const double gh0, const int padded_Nnodes, const int padded_Nnbr, const int Nnbr, const int compute_pid_s) {
+  
+  for(int wg=0;wg<wgcount;++wg;@outer(0)){
+    for(int wgi=0;wgi<wgsize;++wgi;@inner(0)){
+      int i = wgi + wgsize*wg; // could also pass wgsize as a compiler var
+
+      if (i < padded_Nnodes) {
+	
+        double4 H;
+        double4 rhs;
+	
+        // Four-vectors represent u,v,w,h components of the state variable matrices
+        double4 dH_dx = (double4){0.0,0.0,0.0,0.0};
+        double4 dH_dy = (double4){0.0,0.0,0.0,0.0};
+        double4 dH_dz = (double4){0.0,0.0,0.0,0.0};
+        double4 LH = (double4){0.0,0.0,0.0,0.0};
+
+#pragma unroll
+        for (int j = 0; j < Nnbr; j++){
+	  int dmid = i*padded_Nnbr + j; // 
+	  int dmidT = i+ padded_Nnodes*j; // 
+	  H = K[idx[dmidT]];
+	  
+	  // Update sums
+	  // dH_m/d_n = (D^n)_(ij) (H_m)^(ij)
+	  double dx = Dx[dmidT], dy = Dy[dmidT], dz = Dz[dmidT], Ldmid = L[dmidT];
+	  
+	  dH_dx.x += dx * H.x; dH_dx.y += dx * H.y;  dH_dx.z += dx * H.z; dH_dx.w += dx * H.w;
+	  dH_dy.x += dy * H.x; dH_dy.y += dy * H.y;  dH_dy.z += dy * H.z; dH_dy.w += dy * H.w;
+	  dH_dz.x += dz * H.x; dH_dz.y += dz * H.y;  dH_dz.z += dz * H.z; dH_dz.w += dz * H.w;
+	  LH.x += Ldmid * H.x; LH.y += Ldmid * H.y;  LH.z += Ldmid * H.z; LH.w += Ldmid * H.w;
+        }
+	
+        // Reset to get H at current node (rather than final neighbor)
+        H = K[i+compute_pid_s];
+        
+        // Evaluate RHS of unconstrained momentum equations
+        rhs.x = (H.x * dH_dx.x) + (H.y * dH_dy.x) + (H.z * dH_dz.x);
+	rhs.y = (H.x * dH_dx.y) + (H.y * dH_dy.y) + (H.z * dH_dz.y);
+	rhs.z = (H.x * dH_dx.z) + (H.y * dH_dy.z) + (H.z * dH_dz.z);
+	rhs.w = (H.x * dH_dx.w) + (H.y * dH_dy.w) + (H.z * dH_dz.w);
+
+	double xi = x[i], yi = y[i], zi = z[i], fi = f[i];
+	
+        rhs.x += fi * ((yi * H.z) - (zi * H.y)) + dH_dx.w;
+        rhs.y += fi * ((zi * H.x) - (xi * H.z)) + dH_dy.w;
+        rhs.z += fi * ((xi * H.y) - (yi * H.x)) + dH_dz.w;
+        rhs.x *= -1.;
+	rhs.y *= -1.;
+	rhs.z *= -1.;
+	rhs.w *= -1.;
+	
+        // Project momentum equations to confine motion to the surface of the sphere and add hyperviscosity
+        // Get indices of x, y, and z components of projection matrices
+        int x_id = 3*i;
+        int y_id = 3*i + 1;
+        int z_id = 3*i + 2;
+
+	double4 Fi = LH;
+
+        // Evaluate projections and apply hyperviscosity
+	Fi.x += (p_u[x_id] * rhs.x) + (p_u[y_id] * rhs.y) + (p_u[z_id] * rhs.z);
+        Fi.y += (p_v[x_id] * rhs.x) + (p_v[y_id] * rhs.y) + (p_v[z_id] * rhs.z);
+        Fi.z += (p_w[x_id] * rhs.x) + (p_w[y_id] * rhs.y) + (p_w[z_id] * rhs.z);
+	
+        // Calculate the RHS of the geopotential equation
+        Fi.w += rhs.w +
+	  (H.x * gradghm[x_id]) +
+	  (H.y * gradghm[y_id]) +
+	  (H.z * gradghm[z_id]) -
+	  (H.w + gh0 - ghm[i]) * (dH_dx.x + dH_dy.y + dH_dz.z);
+
+	//	F[i] = Fi;
+	double4 Di = D[i];
+	Di.x += sc1*Fi.x;
+	Di.y += sc1*Fi.y;
+	Di.z += sc1*Fi.z;
+	Di.w += sc1*Fi.w;
+
+	double4 K2i = Hbuff[i];
+	K2i.x += sc2*Fi.x;
+	K2i.y += sc2*Fi.y;
+	K2i.z += sc2*Fi.z;
+	K2i.w += sc2*Fi.w;
+
+	D[i] = Di;
+	K2[i] = K2i;
+      }
+    }
+  }
+
+}
+
+
+
 // can these pointers be declared restrict ?
 @kernel void copy_arr_kernel(const int wgcount, const int wgsize,  @restrict double* D,  @restrict const double* F, const int arr_size) {
 
@@ -231,10 +341,13 @@
   for(int wg=0;wg<wgcount;++wg;@outer(0)){
     for(int wgi=0;wgi<wgsize;++wgi;@inner(0)){
       int i = wgi + wgsize*wg; // could also pass wgsize as a compiler var
+
+#define sixth (1./6.)
       
       if (i < Nnodes*4){
-	H[compute_pid_s*4 + i] += (dt/6.0) * D[i]; // H += dt/6*D (Add all of the RK pieces and multiply by 1/6 per RK-45 algorithm)
-	K[compute_pid_s*4 + i] = H[compute_pid_s*4 + i]; // Update to use H in the first round of the next time step w/o updating eval_RHS args
+	const double Hup = H[compute_pid_s*4 + i] + sixth*dt*D[i];
+	H[compute_pid_s*4 + i] = Hup; // H += dt/6*D (Add all of the RK pieces and multiply by 1/6 per RK-45 algorithm)
+	K[compute_pid_s*4 + i] = Hup; // Update to use H in the first round of the next time step w/o updating eval_RHS args
       }
     }
   }

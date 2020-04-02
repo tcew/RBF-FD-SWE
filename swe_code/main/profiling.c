@@ -47,6 +47,7 @@ timing_struct init_timer(int nattempts) {
     timer.t_eval_K = (double*) calloc(nattempts, sizeof(double));
     timer.t_update_D = (double*) calloc(nattempts, sizeof(double));
     timer.t_update_H = (double*) calloc(nattempts, sizeof(double));
+    timer.t_eval_combined = (double*) calloc(nattempts, sizeof(double));
 	
     return timer;
 }
@@ -68,8 +69,8 @@ void process_profiling_results() {
     MPI_Reduce(local_timer.t_update_H, global_sum_timer.t_update_H, nattempts, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(local_timer.t_mpi, global_sum_timer.t_mpi, nattempts, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     MPI_Reduce(&local_timer.t_ocl, &global_sum_timer.t_ocl, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&local_timer.t_occa, &global_sum_timer.t_occa, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-	
+    MPI_Reduce(&local_timer.t_occa, &global_sum_timer.t_occa, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);	
+    MPI_Reduce(local_timer.t_eval_combined, global_sum_timer.t_eval_combined, nattempts, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     #else
     global_sum_timer.t_init = local_timer.t_init;
     global_sum_timer.t_ocl = local_timer.t_ocl;
@@ -80,6 +81,7 @@ void process_profiling_results() {
     memcpy(global_sum_timer.t_update_D, local_timer.t_update_D, sizeof(double) * nattempts);
     memcpy(global_sum_timer.t_update_H, local_timer.t_update_H, sizeof(double) * nattempts);
     memcpy(global_sum_timer.t_mpi, local_timer.t_mpi, sizeof(double) * nattempts);
+    memcpy(global_sum_timer.t_eval_combined, local_timer.t_eval_combined, sizeof(double) * nattempts);
     #endif
     
     if (mpi_rank == 0) {
@@ -128,7 +130,17 @@ void process_profiling_results() {
             if (i == 2 || max_timer.t_eval_rhs[0] < t_eval_rhs_i) max_timer.t_eval_rhs[0] = t_eval_rhs_i;
 		}
 
-        timing_struct stddev2_timer = init_timer(1);
+        // Eliminate first two attempts from average for warmup time
+        for (int i = 2; i < nattempts; i++) {
+            double t_eval_combined_i = global_sum_timer.t_eval_combined[i] / (nsteps * mpi_size);
+            average_timer.t_eval_combined[0] += t_eval_combined_i / (nattempts-2);
+            if (i == 2 || min_timer.t_eval_combined[0] > t_eval_combined_i) min_timer.t_eval_combined[0] = t_eval_combined_i;
+            if (i == 2 || max_timer.t_eval_combined[0] < t_eval_combined_i) max_timer.t_eval_combined[0] = t_eval_combined_i;
+		}
+
+
+
+	timing_struct stddev2_timer = init_timer(1);
 
         for (int i = 0; i < nattempts; i++) {
 
@@ -150,6 +162,11 @@ void process_profiling_results() {
             double t_mpi_i = global_sum_timer.t_mpi[i] / (nsteps * mpi_size);
             stddev2_timer.t_mpi[0] += pow(average_timer.t_mpi[0] - t_mpi_i, 2);
 
+
+            double t_eval_combined_i = global_sum_timer.t_eval_combined[i] / (nsteps * mpi_size);
+            stddev2_timer.t_eval_combined[0] += pow(average_timer.t_eval_combined[0] - t_eval_combined_i, 2);
+
+	    
         }
 
         printf("\n============================================================= Profiling Results ==============================================================\n\n");
@@ -174,7 +191,7 @@ void process_profiling_results() {
         printf("Eval_K        (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_eval_K[0], min_timer.t_eval_K[0], max_timer.t_eval_K[0], sqrt(stddev2_timer.t_eval_K[0]) / nattempts);
         printf("Update_D      (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_update_D[0], min_timer.t_update_D[0], max_timer.t_update_D[0], sqrt(stddev2_timer.t_update_D[0]) / nattempts);
         printf("Update_H      (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_update_H[0], min_timer.t_update_H[0], max_timer.t_update_H[0], sqrt(stddev2_timer.t_update_H[0]) / nattempts);
-        
+	printf("Eval_Combined (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_eval_combined[0], min_timer.t_eval_combined[0], max_timer.t_eval_combined[0], sqrt(stddev2_timer.t_eval_combined[0]) / nattempts);
         #ifdef USE_MPI
         printf("MPI Overhead  (seconds/timestep) -> \tAverage: \t%e \tMin: \t%e \tMax: \t%e \tSTDDEV: \t%e\n", average_timer.t_mpi[0], min_timer.t_mpi[0], max_timer.t_mpi[0], sqrt(stddev2_timer.t_mpi[0]) / nattempts);
         #endif

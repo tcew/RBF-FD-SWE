@@ -304,6 +304,7 @@ int main(int argc, char** argv) {
     
   // Define kernels
   occaKernel eval_RHS_kernel;
+  occaKernel eval_combined_kernel;
   occaKernel copy_arr_kernel;
   occaKernel update_D_kernel;
   occaKernel eval_K_kernel;
@@ -314,6 +315,7 @@ int main(int argc, char** argv) {
   occaMemory H_buff;
   occaMemory F_buff;
   occaMemory K_buff;
+  occaMemory K2_buff;
   occaMemory D_buff;
 
   fType* H_occa;
@@ -358,6 +360,7 @@ int main(int argc, char** argv) {
     // Compile all OKL kernels
     occaProperties props = occaCreateProperties();
     eval_RHS_kernel = occaDeviceBuildKernel(device, kernelFile, "eval_RHS_kernel", props);
+    eval_combined_kernel = occaDeviceBuildKernel(device, kernelFile, "eval_combined_kernel", props);
     copy_arr_kernel = occaDeviceBuildKernel(device, kernelFile, "copy_arr_kernel", props);
     update_D_kernel = occaDeviceBuildKernel(device, kernelFile, "update_D_kernel", props);
     eval_K_kernel   = occaDeviceBuildKernel(device, kernelFile, "eval_K_kernel",   props);
@@ -417,6 +420,7 @@ int main(int argc, char** argv) {
       // allocate device arrays
       H_buff = occaDeviceMalloc(device, sizeof(fType) * LPSMD->patch_size*4, H, occaDefault);
       K_buff = occaDeviceMalloc(device, sizeof(fType) * LPSMD->patch_size*4, H, occaDefault);
+      K2_buff = occaDeviceMalloc(device, sizeof(fType) * LPSMD->patch_size*4, H, occaDefault);
 #endif
     }
 
@@ -456,7 +460,8 @@ int main(int argc, char** argv) {
 	else if (sim_params.OCCA == 1) {
 	  
 #ifdef USE_OCCA
-	  RK_substep_occa(eval_RHS_kernel,
+	  RK_substep_occa(eval_combined_kernel,
+			  eval_RHS_kernel,
 			  copy_arr_kernel,
 			  update_D_kernel,
 			  eval_K_kernel,
@@ -466,6 +471,7 @@ int main(int argc, char** argv) {
 			  H_buff,
 			  F_buff, 
 			  K_buff,
+			  K2_buff,
 			  D_buff,
 			  rk_val);
                     

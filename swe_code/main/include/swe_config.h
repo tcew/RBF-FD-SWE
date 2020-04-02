@@ -317,6 +317,7 @@ typedef struct timing_struct {
 	double* t_eval_K;
 	double* t_update_D;
 	double* t_update_H;
+        double* t_eval_combined;
 
 } timing_struct;
 
