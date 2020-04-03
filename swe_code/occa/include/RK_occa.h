@@ -49,7 +49,9 @@ void update_H_occa(occaKernel kernel, occaDevice device,
 
 void eval_combined_occa(occaKernel kernel, occaDevice device,
 			LPSMD_buffers *LPSMD_buffs,
-			occaMemory K_buff, occaMemory F_buff, occaMemory D_buff, occaMemory H_buff, occaMemory K2_buff,
-			double sc1, double sc2);
+			occaMemory K_buff, occaMemory F_buff,
+			occaMemory D_buff, occaMemory H_buff,
+			occaMemory K2_buff,
+			double sc0, double sc1, double sc2, double sc3);
 
 #endif

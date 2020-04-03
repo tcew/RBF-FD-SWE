@@ -187,8 +187,10 @@
 				  @restrict const double* f,  @restrict const double* ghm,
 				  @restrict const double* p_u,@restrict const double* p_v, @restrict const double* p_w,
 				  @restrict const double* gradghm,
+				  const double sc0,
 				  const double sc1,
 				  const double sc2,
+				  const double sc3,
 				  @restrict const double4* K,
 				  @restrict double4* F,
 				  @restrict double4* D,
@@ -267,20 +269,42 @@
 	  (H.w + gh0 - ghm[i]) * (dH_dx.x + dH_dy.y + dH_dz.z);
 
 	//	F[i] = Fi;
-	double4 Di = D[i];
+	// D = sc0*D + sc1*F
+	double4 Di = D[i]; // (double4) {0.0,0.0,0.0,0.0};
+	//	if(sc0!=0)
+	//	  Di =  D[i];
+
+	Di.x *= sc0;
+	Di.y *= sc0;
+	Di.z *= sc0;
+	Di.w *= sc0;
+	
 	Di.x += sc1*Fi.x;
 	Di.y += sc1*Fi.y;
 	Di.z += sc1*Fi.z;
 	Di.w += sc1*Fi.w;
 
-	double4 K2i = Hbuff[i];
-	K2i.x += sc2*Fi.x;
-	K2i.y += sc2*Fi.y;
-	K2i.z += sc2*Fi.z;
-	K2i.w += sc2*Fi.w;
+	double4 Hi = Hbuff[i];
 
-	D[i] = Di;
-	K2[i] = K2i;
+	if(sc3==0){
+	  // K = H + sc2*F
+	  double4 K2i;
+	  K2i.x = Hi.x + sc2*Fi.x;
+	  K2i.y = Hi.y + sc2*Fi.y;
+	  K2i.z = Hi.z + sc2*Fi.z;
+	  K2i.w = Hi.w + sc2*Fi.w;
+	  D[i] = Di;
+	  K2[i] = K2i;
+	}else{
+	  // K2 = H = H + sc3*D
+	  Hi.x += sc3*Di.x;
+	  Hi.y += sc3*Di.y;
+	  Hi.z += sc3*Di.z;
+	  Hi.w += sc3*Di.w;
+	  
+	  Hbuff[i] = Hi;
+	  K2[i] = Hi;
+	}
       }
     }
   }

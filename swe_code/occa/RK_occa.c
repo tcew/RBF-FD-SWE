@@ -23,57 +23,57 @@ void RK_substep_occa(occaKernel eval_combined_kernel,
     
   // full RK4 timestep length
   const fType dt = LPSMD->dt;
+
+  double sc0, sc1, sc2, sc3;
+  
   
   switch(substep_id) {
-  case 0:
-    // get F_0 = d/dt(K_0 = H)
-    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff); // F = RHS(K)
-    // initialize D = F_0
-    copy_arr_occa(copy_arr_kernel, device, D_buff, F_buff);              // D = F
-    // evaluate K_1 = H + (dt/2) * F_0
-    eval_K_occa(eval_K_kernel, device,  H_buff, F_buff, K_buff, dt/2.0); // K = H + (dt/2)*F
-    break;
-            
-  case 1:{
-#if 0
-    // get F_1 = d/dt(K_1 = H + (dt/2) * F_0)
-    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff); // F = RHS(K)
-    // update D += 2 * F_1
-    update_D_occa(update_D_kernel, device, F_buff, D_buff, 2.0);         // D += 2*F
-    // evaluate K_2 = H + (dt/2) * F_0
-    eval_K_occa(eval_K_kernel, device,  H_buff, F_buff, K_buff, dt/2.0); // K = H + (dt/2)*F
-#else
-    double sc1 = 2.;
-    double sc2 = 0.5*dt;
+  case 0:{
+    sc0 = 0;  // D = 0*D
+    sc1 = 1.; // D += 1*F
+    sc2 = 0.5*dt; // K = H + (dt/2)*F
+    sc3 = 0; // update H,K
+
     eval_combined_occa(eval_combined_kernel, device, LPSMD_buffs,
-		       K_buff, F_buff, D_buff, H_buff, K2_buff, sc1, sc2);
-#endif
+		       K_buff, F_buff, D_buff, H_buff, K2_buff, sc0, sc1, sc2, sc3);
+
+    break;
+  }  
+  case 1:{
+    sc0 = 1;
+    sc1 = 2.;
+    sc2 = 0.5*dt;
+    sc3 = 0;
+
+    eval_combined_occa(eval_combined_kernel, device, LPSMD_buffs,
+		       K2_buff, F_buff, D_buff, H_buff, K_buff, sc0, sc1, sc2, sc3);
+
     break;
   }            
   case 2:{
-#if 0
-    // get F_2 = d/dt(K_2 = H + (dt/2) * F_1)
-    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff); // F = RHS(K)
-    // update D += 2 * F_2
-    update_D_occa(update_D_kernel, device, F_buff, D_buff, 2.0);         // D += 2*F
-    // evaluate K_3 = H + dt * F_0
-    eval_K_occa(eval_K_kernel, device, H_buff, F_buff, K_buff, dt);      // K = H + dt*F
-#else
-    double sc1 = 2.;
-    double sc2 = dt;
+    sc0 = 1;
+    sc1 = 2.;
+    sc2 = dt;
+    sc3 = 0;
+
     eval_combined_occa(eval_combined_kernel, device, LPSMD_buffs,
-		       K2_buff, F_buff, D_buff, H_buff, K_buff, sc1, sc2);
-#endif
+		       K_buff, F_buff, D_buff, H_buff, K2_buff, sc0, sc1, sc2, sc3);
+
+
+    
     break;
   }  
-  case 3:
-    // get F_3 = d/dt(K_3 = H + dt * F_2)
-    eval_RHS_occa(eval_RHS_kernel, device, LPSMD_buffs, K_buff, F_buff);
-    // update D += F_3
-    update_D_occa(update_D_kernel, device, F_buff, D_buff, 1.0);
-    // add everything together to get H_n+1
-    update_H_occa(update_H_kernel, device, H_buff, D_buff, K_buff, dt);
+  case 3:{
+    sc0 = 1;
+    sc1 = 1.;
+    sc2 = dt;
+    sc3 = dt/6.;
+
+    eval_combined_occa(eval_combined_kernel, device, LPSMD_buffs,
+		       K2_buff, F_buff, D_buff, H_buff, K_buff, sc0, sc1, sc2, sc3);
+
     break;
+  }
   }
 }
 
@@ -127,7 +127,7 @@ void eval_RHS_occa(occaKernel kernel, occaDevice device,
 void eval_combined_occa(occaKernel kernel, occaDevice device,
 			LPSMD_buffers *LPSMD_buffs,
 			occaMemory K_buff, occaMemory F_buff, occaMemory D_buff, occaMemory H_buff, occaMemory K2_buff,
-			double sc1, double sc2){
+			double sc0, double sc1, double sc2, double sc3){
 
   double t_start = getTime();
     
@@ -160,8 +160,10 @@ void eval_combined_occa(occaKernel kernel, occaDevice device,
 		LPSMD_buffs->p_v,
 		LPSMD_buffs->p_w,
 		LPSMD_buffs->gradghm,
+		occaDouble(sc0),
 		occaDouble(sc1),
-		occaDouble(sc2), 
+		occaDouble(sc2),
+		occaDouble(sc3), 
 		K_buff,
 		F_buff,
 		D_buff,
